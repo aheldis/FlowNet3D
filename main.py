@@ -43,19 +43,21 @@ def _init_(args):
     os.system('cp model.py checkpoints' + '/' + args.exp_name + '/' + 'model.py.backup')
     os.system('cp data.py checkpoints' + '/' + args.exp_name + '/' + 'data.py.backup')
 
+
 def weights_init(m):
-    classname=m.__class__.__name__
+    classname = m.__class__.__name__
     if classname.find('Conv2d') != -1:
         nn.init.kaiming_normal_(m.weight.data)
     if classname.find('Conv1d') != -1:
         nn.init.kaiming_normal_(m.weight.data)
 
-def scene_flow_EPE_np(pred, labels, mask):
-    error = np.sqrt(np.sum((pred - labels)**2, 2) + 1e-20)
 
-    gtflow_len = np.sqrt(np.sum(labels*labels, 2) + 1e-20) # B,N
-    acc1 = np.sum(np.logical_or((error <= 0.05)*mask, (error/gtflow_len <= 0.05)*mask), axis=1)
-    acc2 = np.sum(np.logical_or((error <= 0.1)*mask, (error/gtflow_len <= 0.1)*mask), axis=1)
+def scene_flow_EPE_np(pred, labels, mask):
+    error = np.sqrt(np.sum((pred - labels) ** 2, 2) + 1e-20)
+
+    gtflow_len = np.sqrt(np.sum(labels * labels, 2) + 1e-20)  # B,N
+    acc1 = np.sum(np.logical_or((error <= 0.05) * mask, (error / gtflow_len <= 0.05) * mask), axis=1)
+    acc2 = np.sum(np.logical_or((error <= 0.1) * mask, (error / gtflow_len <= 0.1) * mask), axis=1)
 
     mask_sum = np.sum(mask, 1)
     acc1 = acc1[mask_sum > 0] / mask_sum[mask_sum > 0]
@@ -67,7 +69,16 @@ def scene_flow_EPE_np(pred, labels, mask):
     EPE = np.mean(EPE)
     return EPE, acc1, acc2
 
+
+def fgsm_attack(image, epsilon, data_grad):
+    sign_data_grad = data_grad.sign()
+    perturbed_image = image + epsilon*sign_data_grad
+    perturbed_image = torch.clamp(perturbed_image, 0, 255)
+    return perturbed_image
+
+
 def test_one_epoch(args, net, test_loader):
+    torch.set_grad_enabled(True)
     net.eval()
 
     total_loss = 0
@@ -75,27 +86,38 @@ def test_one_epoch(args, net, test_loader):
     total_acc3d = 0
     total_acc3d_2 = 0
     num_examples = 0
-    for i, data in tqdm(enumerate(test_loader), total = len(test_loader)):
+    for i, data in tqdm(enumerate(test_loader), total=len(test_loader)):
         pc1, pc2, color1, color2, flow, mask1 = data
-        pc1 = pc1.cuda().transpose(2,1).contiguous()
-        pc2 = pc2.cuda().transpose(2,1).contiguous()
-        color1 = color1.cuda().transpose(2,1).contiguous()
-        color2 = color2.cuda().transpose(2,1).contiguous()
+        pc1 = pc1.cuda().transpose(2, 1).contiguous()
+        pc2 = pc2.cuda().transpose(2, 1).contiguous()
+        color1 = color1.cuda().transpose(2, 1).contiguous()
+        color2 = color2.cuda().transpose(2, 1).contiguous()
         flow = flow.cuda()
         mask1 = mask1.cuda().float()
 
         batch_size = pc1.size(0)
         num_examples += batch_size
-        flow_pred = net(pc1, pc2, color1, color2).permute(0,2,1)
+
+        # start attack
+        color1.requires_grad = True # for attack
+        flow_pred = net(pc1, pc2, color1, color2).permute(0, 2, 1)
+        epe = torch.sum((flow_pred - flow) ** 2, dim=0).sqrt().view(-1)
+        net.zero_grad()
+        epe.mean().backward()
+        data_grad = color1.grad.data
+        color1.data[:, 2, :] = fgsm_attack(color1, 10, data_grad)[:, 2, :]
+        # end attack
+
+        flow_pred = net(pc1, pc2, color1, color2).permute(0, 2, 1)
         loss = torch.mean(mask1 * torch.sum((flow_pred - flow) * (flow_pred - flow), -1) / 2.0)
-        epe_3d, acc_3d, acc_3d_2 = scene_flow_EPE_np(flow_pred.detach().cpu().numpy(), flow.detach().cpu().numpy(), mask1.detach().cpu().numpy())
+        epe_3d, acc_3d, acc_3d_2 = scene_flow_EPE_np(flow_pred.detach().cpu().numpy(), flow.detach().cpu().numpy(),
+                                                     mask1.detach().cpu().numpy())
         total_epe += epe_3d * batch_size
         total_acc3d += acc_3d * batch_size
-        total_acc3d_2+=acc_3d_2*batch_size
+        total_acc3d_2 += acc_3d_2 * batch_size
         # print('batch EPE 3D: %f\tACC 3D: %f\tACC 3D 2: %f' % (epe_3d, acc_3d, acc_3d_2))
 
         total_loss += loss.item() * batch_size
-        
 
     return total_loss * 1.0 / num_examples, total_epe * 1.0 / num_examples, total_acc3d * 1.0 / num_examples, total_acc3d_2 * 1.0 / num_examples
 
@@ -104,13 +126,13 @@ def train_one_epoch(args, net, train_loader, opt):
     net.train()
     num_examples = 0
     total_loss = 0
-    for i, data in tqdm(enumerate(train_loader), total = len(train_loader)):
+    for i, data in tqdm(enumerate(train_loader), total=len(train_loader)):
         pc1, pc2, color1, color2, flow, mask1 = data
-        pc1 = pc1.cuda().transpose(2,1).contiguous()
-        pc2 = pc2.cuda().transpose(2,1).contiguous()
-        color1 = color1.cuda().transpose(2,1).contiguous()
-        color2 = color2.cuda().transpose(2,1).contiguous()
-        flow = flow.cuda().transpose(2,1).contiguous()
+        pc1 = pc1.cuda().transpose(2, 1).contiguous()
+        pc2 = pc2.cuda().transpose(2, 1).contiguous()
+        color1 = color1.cuda().transpose(2, 1).contiguous()
+        color2 = color2.cuda().transpose(2, 1).contiguous()
+        flow = flow.cuda().transpose(2, 1).contiguous()
         mask1 = mask1.cuda().float()
 
         batch_size = pc1.size(0)
@@ -130,11 +152,10 @@ def train_one_epoch(args, net, train_loader, opt):
 
 
 def test(args, net, test_loader, boardio, textio):
-
     test_loss, epe, acc, acc_2 = test_one_epoch(args, net, test_loader)
 
     textio.cprint('==FINAL TEST==')
-    textio.cprint('mean test loss: %f\tEPE 3D: %f\tACC 3D: %f\tACC 3D 2: %f'%(test_loss, epe, acc, acc_2))
+    textio.cprint('mean test loss: %f\tEPE 3D: %f\tACC 3D: %f\tACC 3D 2: %f' % (test_loss, epe, acc, acc_2))
 
 
 def train(args, net, train_loader, test_loader, boardio, textio):
@@ -145,24 +166,24 @@ def train(args, net, train_loader, test_loader, boardio, textio):
         print("Use Adam")
         opt = optim.Adam(net.parameters(), lr=args.lr, weight_decay=1e-4)
     # scheduler = MultiStepLR(opt, milestones=[75, 150, 200], gamma=0.1)
-    scheduler = StepLR(opt, 10, gamma = 0.7)
+    scheduler = StepLR(opt, 10, gamma=0.7)
 
     best_test_loss = np.inf
     for epoch in range(args.epochs):
-        textio.cprint('==epoch: %d, learning rate: %f=='%(epoch, opt.param_groups[0]['lr']))
+        textio.cprint('==epoch: %d, learning rate: %f==' % (epoch, opt.param_groups[0]['lr']))
         train_loss = train_one_epoch(args, net, train_loader, opt)
-        textio.cprint('mean train EPE loss: %f'%train_loss)
+        textio.cprint('mean train EPE loss: %f' % train_loss)
 
         test_loss, epe, acc, acc_2 = test_one_epoch(args, net, test_loader)
-        textio.cprint('mean test loss: %f\tEPE 3D: %f\tACC 3D: %f\tACC 3D 2: %f'%(test_loss, epe, acc, acc_2))
+        textio.cprint('mean test loss: %f\tEPE 3D: %f\tACC 3D: %f\tACC 3D 2: %f' % (test_loss, epe, acc, acc_2))
         if best_test_loss >= test_loss:
             best_test_loss = test_loss
-            textio.cprint('best test loss till now: %f'%test_loss)
+            textio.cprint('best test loss till now: %f' % test_loss)
             if torch.cuda.device_count() > 1:
                 torch.save(net.module.state_dict(), 'checkpoints/%s/models/model.best.t7' % args.exp_name)
             else:
                 torch.save(net.state_dict(), 'checkpoints/%s/models/model.best.t7' % args.exp_name)
-        
+
         scheduler.step()
         # if torch.cuda.device_count() > 1:
         #     torch.save(net.module.state_dict(), 'checkpoints/%s/models/model.%d.t7' % (args.exp_name, epoch))
@@ -215,7 +236,8 @@ def main():
     parser.add_argument('--dataset', type=str, default='SceneflowDataset',
                         choices=['SceneflowDataset'], metavar='N',
                         help='dataset to use')
-    parser.add_argument('--dataset_path', type=str, default='../../datasets/data_processed_maxcut_35_20k_2k_8192', metavar='N',
+    parser.add_argument('--dataset_path', type=str, default='../../datasets/data_processed_maxcut_35_20k_2k_8192',
+                        metavar='N',
                         help='dataset to use')
     parser.add_argument('--model_path', type=str, default='', metavar='N',
                         help='Pretrained model path')
@@ -246,10 +268,10 @@ def main():
             batch_size=args.test_batch_size, shuffle=False, drop_last=False)
     elif args.dataset == 'SceneflowDataset':
         train_loader = DataLoader(
-            SceneflowDataset(npoints=args.num_points, root = args.dataset_path, partition='train'),
+            SceneflowDataset(npoints=args.num_points, root=args.dataset_path, partition='train'),
             batch_size=args.batch_size, shuffle=True, drop_last=True)
         test_loader = DataLoader(
-            SceneflowDataset(npoints=args.num_points, root = args.dataset_path, partition='test'),
+            SceneflowDataset(npoints=args.num_points, root=args.dataset_path, partition='test'),
             batch_size=args.test_batch_size, shuffle=False, drop_last=False)
     else:
         raise Exception("not implemented")
@@ -277,7 +299,6 @@ def main():
     else:
         train(args, net, train_loader, test_loader, boardio, textio)
 
-
     print('FINISH')
     # boardio.close()
 
@@ -285,5 +306,8 @@ def main():
 if __name__ == '__main__':
     main()
 
-
 # without attack -> mean test loss: 0.022395        EPE 3D: 0.155632        ACC 3D: 0.196502        ACC 3D 2: 0.557236
+# all channels -> mean test loss: 0.494000        EPE 3D: 0.912921        ACC 3D: 0.000419        ACC 3D 2: 0.003446
+# channel 0 -> mean test loss: 0.626364        EPE 3D: 1.078839        ACC 3D: 0.000088        ACC 3D 2: 0.000729
+# channel 1 -> mean test loss: 0.504368        EPE 3D: 0.933162        ACC 3D: 0.000379        ACC 3D 2: 0.002907
+# channel 2 -> mean test loss: 0.526462        EPE 3D: 0.955534        ACC 3D: 0.000518        ACC 3D 2: 0.004143
