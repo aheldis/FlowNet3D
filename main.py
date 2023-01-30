@@ -172,6 +172,10 @@ def train(args, net, train_loader, test_loader, boardio, textio):
 
 
 def main():
+    import gc
+    gc.collect()
+    torch.cuda.empty_cache()
+    # print(torch.cuda.memory_summary(device=None, abbreviated=False))
     parser = argparse.ArgumentParser(description='Point Cloud Registration')
     parser.add_argument('--exp_name', type=str, default='exp', metavar='N',
                         help='Name of the experiment')
@@ -186,7 +190,7 @@ def main():
                         help='Dropout ratio in transformer')
     parser.add_argument('--batch_size', type=int, default=64, metavar='batch_size',
                         help='Size of batch)')
-    parser.add_argument('--test_batch_size', type=int, default=32, metavar='batch_size',
+    parser.add_argument('--test_batch_size', type=int, default=8, metavar='batch_size',
                         help='Size of batch)')
     parser.add_argument('--epochs', type=int, default=250, metavar='N',
                         help='number of episode to train ')
@@ -200,7 +204,7 @@ def main():
                         help='enables CUDA training')
     parser.add_argument('--seed', type=int, default=1234, metavar='S',
                         help='random seed (default: 1)')
-    parser.add_argument('--eval', action='store_true', default=False,
+    parser.add_argument('--eval', action='store_true', default=True,
                         help='evaluate the model')
     parser.add_argument('--cycle', type=bool, default=False, metavar='N',
                         help='Whether to use cycle consistency')
@@ -280,3 +284,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+# without attack -> mean test loss: 0.022395        EPE 3D: 0.155632        ACC 3D: 0.196502        ACC 3D 2: 0.557236

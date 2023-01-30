@@ -1,3 +1,12 @@
+Use these links in order to resolve the errors:
+
+1. https://github.com/Turoad/lanedet/issues/29
+2. https://stackoverflow.com/questions/64261546/how-to-solve-error-microsoft-visual-c-14-0-or-greater-is-required-when-inst
+
+python main.py --exp_name=flownet3d --dataset_path=data/data_processed_maxcut_35_20k_2k_8192 --eval=True --model_path=pretrained_model/mod
+el.best.t7
+
+
 # flownet3d_pytorch
 The pytorch implementation of [flownet3d](https://github.com/xingyul/flownet3d) based on [WangYueFt/dcp](https://github.com/WangYueFt/dcp), [sshaoshuai/Pointnet2.PyTorch](https://github.com/sshaoshuai/Pointnet2.PyTorch) and [yanx27/Pointnet_Pointnet2_pytorch](https://github.com/yanx27/Pointnet_Pointnet2_pytorch)
 
