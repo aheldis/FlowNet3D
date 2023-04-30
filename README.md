@@ -1,6 +1,3 @@
-python main.py --exp_name=flownet3d --dataset_path=data/data_processed_maxcut_35_20k_2k_8192 --eval=True --model_path=pretrained_model/model.best.t7
-
-
 # flownet3d_pytorch
 The pytorch implementation of [flownet3d](https://github.com/xingyul/flownet3d) based on [WangYueFt/dcp](https://github.com/WangYueFt/dcp), [sshaoshuai/Pointnet2.PyTorch](https://github.com/sshaoshuai/Pointnet2.PyTorch) and [yanx27/Pointnet_Pointnet2_pytorch](https://github.com/yanx27/Pointnet_Pointnet2_pytorch)
 
@@ -33,6 +30,10 @@ Then run the following command to train:
 python main.py --exp_name=flownet3d --dataset_path=xx/yy
 ```
 where xx/yy is the dataset path
+
+## Attacking the model
+
+python main.py --exp_name=flownet3d --dataset_path=data/data_processed_maxcut_35_20k_2k_8192 --model_path=pretrained_model/model.best.t7
 
 ## Performance comparison
 All of the following experiments were tested on a TITAN RTX
