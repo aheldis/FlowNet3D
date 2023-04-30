@@ -10,7 +10,7 @@
 #include <cuda_runtime_api.h>
 #include "interpolate_gpu.h"
 
-extern THCState *state;
+// extern THCState *state;
 
 
 void three_nn_wrapper_fast(int b, int n, int m, at::Tensor unknown_tensor, 
