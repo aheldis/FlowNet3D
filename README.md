@@ -1,10 +1,4 @@
-Use these links in order to resolve the errors:
-
-1. https://github.com/Turoad/lanedet/issues/29
-2. https://stackoverflow.com/questions/64261546/how-to-solve-error-microsoft-visual-c-14-0-or-greater-is-required-when-inst
-
-python main.py --exp_name=flownet3d --dataset_path=data/data_processed_maxcut_35_20k_2k_8192 --eval=True --model_path=pretrained_model/mod
-el.best.t7
+python main.py --exp_name=flownet3d --dataset_path=data/data_processed_maxcut_35_20k_2k_8192 --eval=True --model_path=pretrained_model/model.best.t7
 
 
 # flownet3d_pytorch

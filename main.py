@@ -258,7 +258,7 @@ def main():
                         help='dataset to use')
     parser.add_argument('--model_path', type=str, default='', metavar='N',
                         help='Pretrained model path')
-        parser.add_argument('--attack_type', help='Attack type options: None, FGSM, PGD', type=str, default='PGD')
+    parser.add_argument('--attack_type', help='Attack type options: None, FGSM, PGD', type=str, default='PGD')
     parser.add_argument('--iters', help='Number of iters for PGD?', type=int, default=10)
     parser.add_argument('--epsilon', help='epsilon?', type=int, default=10)
     parser.add_argument('--channel', help='Color channel options: 0, 1, 2, -1 (all)', type=int, default=-1) 
@@ -326,9 +326,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# without attack -> mean test loss: 0.022395        EPE 3D: 0.155632        ACC 3D: 0.196502        ACC 3D 2: 0.557236
-# all channels -> mean test loss: 0.494000        EPE 3D: 0.912921        ACC 3D: 0.000419        ACC 3D 2: 0.003446
-# channel 0 -> mean test loss: 0.626364        EPE 3D: 1.078839        ACC 3D: 0.000088        ACC 3D 2: 0.000729
-# channel 1 -> mean test loss: 0.504368        EPE 3D: 0.933162        ACC 3D: 0.000379        ACC 3D 2: 0.002907
-# channel 2 -> mean test loss: 0.526462        EPE 3D: 0.955534        ACC 3D: 0.000518        ACC 3D 2: 0.004143
