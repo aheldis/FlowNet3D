@@ -7,7 +7,7 @@
 #include <cuda_runtime_api.h>
 #include "ball_query_gpu.h"
 
-extern THCState *state;
+// extern THCState *state;
 
 #ifndef AT_CHECK
 #define AT_CHECK TORCH_CHECK
