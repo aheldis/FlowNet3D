@@ -78,7 +78,8 @@ def fgsm_attack(image, epsilon, data_grad):
 
 
 def test_one_epoch(args, net, test_loader):
-    torch.set_grad_enabled(True)
+    if args.attack_type != 'None':
+        torch.set_grad_enabled(True)
     net.eval()
 
     total_loss = 0
@@ -99,13 +100,29 @@ def test_one_epoch(args, net, test_loader):
         num_examples += batch_size
 
         # start attack
-        color1.requires_grad = True # for attack
-        flow_pred = net(pc1, pc2, color1, color2).permute(0, 2, 1)
-        epe = torch.sum((flow_pred - flow) ** 2, dim=0).sqrt().view(-1)
-        net.zero_grad()
-        epe.mean().backward()
-        data_grad = color1.grad.data
-        color1.data[:, 2, :] = fgsm_attack(color1, 10, data_grad)[:, 2, :]
+        if args.attack_type != 'None':
+            if args.attack_type == 'FGSM':
+                epsilon = args.epsilon
+                pgd_iters = 1
+            else:
+                epsilon = 2.5 * args.epsilon / args.iters
+                pgd_iters = args.iters
+
+            ori = color1.data
+            
+            for itr in range(pgd_iters):
+                color1.requires_grad = True # for attack
+                flow_pred = net(pc1, pc2, color1, color2).permute(0, 2, 1)
+                epe = torch.sum((flow_pred - flow) ** 2, dim=0).sqrt().view(-1)
+                net.zero_grad()
+                epe.mean().backward()
+                data_grad = color1.grad.data
+                if args.channel == -1:
+                    color1.data = fgsm_attack(color1, epsilon, data_grad)
+                else:
+                    color1.data[:, args.channel, :] = fgsm_attack(color1, epsilon, data_grad)[:, args.channel, :]
+                if args.attack_type == 'PGD':
+                    color1.data = ori + torch.clamp(color1.data - ori, -args.epsilon, args.epsilon)
         # end attack
 
         flow_pred = net(pc1, pc2, color1, color2).permute(0, 2, 1)
@@ -241,6 +258,10 @@ def main():
                         help='dataset to use')
     parser.add_argument('--model_path', type=str, default='', metavar='N',
                         help='Pretrained model path')
+        parser.add_argument('--attack_type', help='Attack type options: None, FGSM, PGD', type=str, default='PGD')
+    parser.add_argument('--iters', help='Number of iters for PGD?', type=int, default=10)
+    parser.add_argument('--epsilon', help='epsilon?', type=int, default=10)
+    parser.add_argument('--channel', help='Color channel options: 0, 1, 2, -1 (all)', type=int, default=-1) 
 
     args = parser.parse_args()
     # os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
