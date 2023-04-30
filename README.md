@@ -27,13 +27,13 @@ The processed Flyingthings3d data is provided [here](https://drive.google.com/fi
 
 Then run the following command to train:
 ```bash
-python main.py --exp_name=flownet3d --dataset_path=xx/yy
+python flying_things_main.py --exp_name=flownet3d --dataset_path=xx/yy
 ```
 where xx/yy is the dataset path
 
 ## Attacking the model
 
-python main.py --exp_name=flownet3d --dataset_path=data/data_processed_maxcut_35_20k_2k_8192 --model_path=pretrained_model/model.best.t7
+python flying_things_main.py --exp_name=flownet3d --dataset_path=data/data_processed_maxcut_35_20k_2k_8192 --model_path=pretrained_model/model.best.t7
 
 ## Performance comparison
 All of the following experiments were tested on a TITAN RTX
