@@ -12,7 +12,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import MultiStepLR, StepLR
 from kitti_dataset import ModelNet40, SceneflowDataset
-from kitti_model import FlowNet3D
+from flying_things_model import FlowNet3D
 import numpy as np
 from torch.utils.data import DataLoader
 # from tensorboardX import SummaryWriter
@@ -222,7 +222,7 @@ def main():
                         help='Model to use, [flownet]')
     parser.add_argument('--emb_dims', type=int, default=512, metavar='N',
                         help='Dimension of embeddings')
-    parser.add_argument('--num_points', type=int, default=16384,
+    parser.add_argument('--num_points', type=int, default=2048,
                         help='Point Number [default: 2048]')
     parser.add_argument('--dropout', type=float, default=0.5, metavar='N',
                         help='Dropout ratio in transformer')
