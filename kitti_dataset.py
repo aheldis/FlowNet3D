@@ -190,12 +190,12 @@ class SceneflowDataset():
             else:
                 sample_idx2 = np.concatenate((np.arange(n2), np.random.choice(n2, self.npoints - n2, replace=True)), axis=-1)
 
-            pos1_ = np.copy(pos1)[sample_idx1, :]
-            pos2_ = np.copy(pos2)[sample_idx2, :]
-            flow_ = np.copy(flow)[sample_idx1, :]
+            pos1_ = np.copy(pos1)[sample_idx1, :].astype('float32')
+            pos2_ = np.copy(pos2)[sample_idx2, :].astype('float32')
+            flow_ = np.copy(flow)[sample_idx1, :].astype('float32')
 
-        color1 = np.zeros([self.npoints, 3])
-        color2 = np.zeros([self.npoints, 3])
+        color1 = np.zeros([self.npoints, 3]).astype('float32')
+        color2 = np.zeros([self.npoints, 3]).astype('float32')
         mask = np.ones([self.npoints])
 
         return pos1_, pos2_, color1, color2, flow_, mask
