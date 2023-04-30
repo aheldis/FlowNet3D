@@ -2,7 +2,9 @@
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <vector>
-#include <THC/THC.h>
+// #include <THC/THC.h>
+#include <ATen/cuda/CUDAContext.h>
+#include <ATen/cuda/CUDAEvent.h>
 #include "group_points_gpu.h"
 
 extern THCState *state;
