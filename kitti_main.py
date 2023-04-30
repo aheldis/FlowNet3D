@@ -222,7 +222,7 @@ def main():
                         help='Model to use, [flownet]')
     parser.add_argument('--emb_dims', type=int, default=512, metavar='N',
                         help='Dimension of embeddings')
-    parser.add_argument('--num_points', type=int, default=2048,
+    parser.add_argument('--num_points', type=int, default=16384,
                         help='Point Number [default: 2048]')
     parser.add_argument('--dropout', type=float, default=0.5, metavar='N',
                         help='Dropout ratio in transformer')
@@ -289,10 +289,10 @@ def main():
             batch_size=args.test_batch_size, shuffle=False, drop_last=False)
     elif args.dataset == 'SceneflowDataset':
         train_loader = DataLoader(
-            SceneflowDataset(npoints=args.num_points, root=args.dataset_path, partition='train'),
+            SceneflowDataset(npoints=args.num_points, root=args.dataset_path, train=True),
             batch_size=args.batch_size, shuffle=True, drop_last=True)
         test_loader = DataLoader(
-            SceneflowDataset(npoints=args.num_points, root=args.dataset_path, partition='test'),
+            SceneflowDataset(npoints=args.num_points, root=args.dataset_path, train=False),
             batch_size=args.test_batch_size, shuffle=False, drop_last=False)
     else:
         raise Exception("not implemented")
