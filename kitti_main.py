@@ -73,7 +73,7 @@ def scene_flow_EPE_np(pred, labels, mask):
 def fgsm_attack(image, epsilon, data_grad):
     sign_data_grad = data_grad.sign()
     perturbed_image = image + epsilon*sign_data_grad
-    perturbed_image = torch.clamp(perturbed_image, 0, 255)
+    # perturbed_image = torch.clamp(perturbed_image, 0, 255)
     return perturbed_image
 
 
@@ -108,8 +108,6 @@ def test_one_epoch(args, net, test_loader):
                 shape = pc1.shape
                 delta = (np.random.rand(np.product(shape)).reshape(shape) - 0.5) * 2 * epsilon
                 pc1.data = ori + torch.from_numpy(delta).type(torch.float).cuda()
-                # pc1.data = torch.clamp(pc1.data, 0.0, 255.0)
-                flow_pred = net(pc1, pc2, color1, color2).permute(0, 2, 1)
                 pgd_iters = 0
             elif args.attack_type == 'FGSM':
                 epsilon = args.epsilon
