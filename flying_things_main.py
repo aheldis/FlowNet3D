@@ -101,7 +101,7 @@ def test_one_epoch(args, net, test_loader):
 
         # start attack
         if args.attack_type != 'None':
-            ori = pc1.data
+            ori = pc1.data # for color attack, you should work with color1 instead of pc1.
 
             if args.attack_type == "RAND":
                 epsilon = args.epsilon
